@@ -120,10 +120,10 @@ if MC <= 0 and esquema != "Esquema C2: Alquiler de Consultorio":
     st.error("⚠️ El Margen de Contribución es negativo o cero. La clínica pierde dinero con cada paciente. Ajusta precios o costos.")
 
 col1, col2, col3, col4 = st.columns(4)
-col1.metric("Capacidad Máxima", f"{int(capacidad_max_mensual)} pac/mes")
-col2.metric("Volumen Real Estimado", f"{int(volumen_real)} pac/mes")
-col3.metric("Margen de Contribución Unitario", f"${MC:,.2f}")
-col4.metric("Punto de Equilibrio", f"{int(PE) if PE != float('inf') else 'Inalcanzable'} pac/mes")
+col1.metric("Capacidad Máxima (pac/mes)", f"{int(capacidad_max_mensual)}")
+col2.metric("Volumen Real (pac/mes)", f"{int(volumen_real)}")
+col3.metric("Margen Unitario", f"${MC:,.2f}")
+col4.metric("Pto. Equilibrio (pac/mes)", f"{int(PE) if PE != float('inf') else 'Inalcanzable'}")
 
 st.markdown("---")
 
