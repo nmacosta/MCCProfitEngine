@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import numpy as np
+from fpdf import FPDF
+import io
 
 # Configuración de la página
 st.set_page_config(page_title="Simulador LTV Clínica Particular", layout="wide")
@@ -163,3 +165,78 @@ fig.add_vline(x=ocupacion_pct*100, line_dash="dot", line_color="green", annotati
 fig.update_layout(height=400)
 
 st.plotly_chart(fig, use_container_width=True)
+
+st.markdown("---")
+st.subheader("📄 Exportar Escenario")
+st.write("Genera un reporte ejecutivo en PDF con los parámetros y resultados actuales.")
+
+# 1. Definir la clase constructora del PDF
+class PDF(FPDF):
+    def header(self):
+        self.set_font('Arial', 'B', 15)
+        self.cell(0, 10, 'Reporte de Simulacion - MCC Profit Engine', border=False, ln=1, align='C')
+        self.ln(5)
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font('Arial', 'I', 8)
+        self.cell(0, 10, f'Pagina {self.page_no()}', 0, 0, 'C')
+
+# 2. Función para compilar los datos y construir el documento
+def generar_pdf():
+    pdf = PDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=11)
+    
+    # Sección 1: Parámetros Operativos
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "1. Parametros Operativos y de Demanda", ln=1)
+    pdf.set_font("Arial", size=11)
+    pdf.cell(0, 8, f"Dias habiles por mes: {dias_habiles}", ln=1)
+    pdf.cell(0, 8, f"Horas operativas por dia: {horas_dia}", ln=1)
+    pdf.cell(0, 8, f"Consultorios disponibles: {num_consultorios}", ln=1)
+    pdf.cell(0, 8, f"Duracion de consulta: {duracion_min} min", ln=1)
+    pdf.cell(0, 8, f"Ocupacion de agenda proyectada: {ocupacion_pct*100}%", ln=1)
+    pdf.cell(0, 8, f"Tasa de Ausentismo (No-show): {no_show_pct*100}%", ln=1)
+    pdf.cell(0, 8, f"Tasa de Cross-Selling: {tasa_cs*100}%", ln=1)
+    pdf.ln(5)
+    
+    # Sección 2: Estructura Financiera
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "2. Estructura de Costos y Precios", ln=1)
+    pdf.set_font("Arial", size=11)
+    pdf.cell(0, 8, f"Costos Fijos Mensuales: ${CF:,.2f}", ln=1)
+    pdf.cell(0, 8, f"Costo Variable por Consulta: ${CV:,.2f}", ln=1)
+    pdf.cell(0, 8, f"Ticket Promedio Cross-Selling: ${precio_cs:,.2f}", ln=1)
+    pdf.cell(0, 8, f"Esquema Medico Seleccionado: {esquema}", ln=1)
+    pdf.ln(5)
+    
+    # Sección 3: Resultados Proyectados
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "3. Resultados Financieros del Escenario", ln=1)
+    pdf.set_font("Arial", size=11)
+    pdf.cell(0, 8, f"Capacidad Maxima: {int(capacidad_max_mensual)} pac/mes", ln=1)
+    pdf.cell(0, 8, f"Volumen Real Estimado: {int(volumen_real)} pac/mes", ln=1)
+    pdf.cell(0, 8, f"Margen de Contribucion Unitario: ${MC:,.2f}", ln=1)
+    
+    texto_pe = f"{int(PE)} pac/mes" if PE != float('inf') else "Inalcanzable"
+    pdf.cell(0, 8, f"Punto de Equilibrio: {texto_pe}", ln=1)
+    
+    pdf.cell(0, 8, f"Ingresos Brutos Estimados: ${ingresos_totales:,.2f}", ln=1)
+    pdf.set_font("Arial", 'B', 11)
+    pdf.cell(0, 8, f"EBITDA (Utilidad Neta): ${utilidad:,.2f}", ln=1)
+    pdf.cell(0, 8, f"Margen Operativo: {margen_operativo:,.1f}%", ln=1)
+    
+    # Convertir el PDF a bytes para Streamlit
+    return bytes(pdf.output(dest='S'))
+
+# 3. Renderizar el botón de descarga
+pdf_bytes = generar_pdf()
+
+st.download_button(
+    label="📥 Descargar Informe Ejecutivo (PDF)",
+    data=pdf_bytes,
+    file_name="Reporte_Simulacion_Clinica.pdf",
+    mime="application/pdf",
+    type="primary"
+)
